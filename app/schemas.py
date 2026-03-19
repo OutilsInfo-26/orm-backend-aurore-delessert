@@ -137,3 +137,21 @@ class PersonWithBooks(BaseModel):
     model_config = {"from_attributes": True}
 
 # fin du code ajouté
+
+class Stats(BaseModel):
+    total_books: int
+    total_authors: int
+    total_tag: int
+    longest_book: BookSummary | None
+    pages_of_longest_book: int | None
+    average_pages: float | None
+    
+    model_config = {"from_attributes": True}
+
+class PersonWithNumberOfBooks(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+    number_of_books: int
+
+    model_config = {"from_attributes": True}

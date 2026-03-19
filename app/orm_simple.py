@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from app.db import get_session
-from app.models import Author, Book, Person
-from app.schemas import AuthorCreate, AuthorOut, AuthorUpdate, BookCreate, BookOut, PersonCreate, PersonOut
+from app.models import Author, Book, Person, Publisher, Tag
+from app.schemas import AuthorCreate, AuthorOut, AuthorUpdate, BookCreate, BookOut, PersonCreate, PersonOut, Stats, PersonWithNumberOfBooks
 
 router = APIRouter(prefix="/orm", tags=["ORM simple"])
 
@@ -113,3 +113,51 @@ def delete_book(
     session.delete(book)
     session.commit()
 
+from app.schemas import BookSummary
+
+@router.get("/stats", response_model=Stats)
+def get_stats(session: Session = Depends(get_session)) -> Stats:
+    total_books = session.scalar(select(func.count(Book.id)))
+    total_authors = session.scalar(select(func.count(Author.id)))
+    total_tags = session.scalar(select(func.count(Tag.id)))
+
+    longest_book_obj = session.scalar(
+        select(Book).order_by(Book.pages.desc()).limit(1)
+    )
+
+    # Moyenne de pages arrondie à 1 chiffre après la virgule
+    average_pages = session.scalar(select(func.avg(Book.pages)))
+    average_pages = round(average_pages, 1) if average_pages is not None else None
+
+    # ✅ Convertir en BookSummary pour Pydantic
+    longest_book = (
+        BookSummary(id=longest_book_obj.id, title=longest_book_obj.title)
+        if longest_book_obj else None
+    )
+
+    return Stats(
+        total_books=total_books,
+        total_authors=total_authors,
+        total_tag=total_tags,
+        longest_book=longest_book,
+        pages_of_longest_book=longest_book_obj.pages if longest_book_obj else None,
+        average_pages=average_pages
+    )
+    
+@router.get("/persons-with-book-count", response_model=list[PersonWithNumberOfBooks])
+def get_persons_with_number_of_books(session: Session = Depends(get_session)) -> list[PersonWithNumberOfBooks]:
+    persons = session.execute(
+        select(Person, func.count(Book.id).label("number_of_books"))
+        .outerjoin(Book)
+        .group_by(Person.id)
+    ).scalars(Person).all()
+
+    return [
+        PersonWithNumberOfBooks(
+            id=person.id,
+            first_name=person.first_name,
+            last_name=person.last_name,
+            number_of_books=session.scalar(select(func.count(Book.id)).where(Book.owner_id == person.id))
+        )
+        for person in persons
+    ]
