@@ -38,6 +38,12 @@ class Book(Base):
     # publisher_id existe en base de données mais il n'y a pas de relationship défini sur Book.
     # Pour accéder à l'éditeur d'un livre, il faut faire une jointure explicite dans la requête.
     publisher_id: Mapped[int | None] = mapped_column(ForeignKey("publishers.id"))
+    
+    # code ajouté
+    
+    owner_id: Mapped[int | None] = mapped_column(ForeignKey("persons.id"))
+    
+    # fin du code ajouté
 
     author: Mapped[Author] = relationship("Author", back_populates="books")
 
@@ -64,3 +70,12 @@ class BookTag(Base):
 
     book: Mapped["Book"] = relationship("Book", back_populates="book_tags")
     tag: Mapped["Tag"] = relationship("Tag", back_populates="book_tags")
+    
+## Code ajouter
+
+class Person(Base):
+    __tablename__ = "persons"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    first_name: Mapped[str] = mapped_column(String(100))
+    last_name: Mapped[str] = mapped_column(String(100))

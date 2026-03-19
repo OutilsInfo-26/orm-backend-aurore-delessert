@@ -3,8 +3,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_session
-from app.models import Author, Book
-from app.schemas import AuthorCreate, AuthorOut, AuthorUpdate, BookCreate, BookOut
+from app.models import Author, Book, Person
+from app.schemas import AuthorCreate, AuthorOut, AuthorUpdate, BookCreate, BookOut, PersonCreate, PersonOut
 
 router = APIRouter(prefix="/orm", tags=["ORM simple"])
 
@@ -70,3 +70,34 @@ def create_book(
     session.commit()
     session.refresh(book)
     return book
+
+# Code ajouté
+
+@router.get("/persons", response_model=list[PersonOut])
+def list_persons(session: Session = Depends(get_session)) -> list[PersonOut]:
+    stmt = select(Person).order_by(Person.id)
+    return session.scalars(stmt).all()
+
+@router.post("/persons", response_model=PersonOut, status_code=201)
+def create_person(
+    payload: PersonCreate,
+    session: Session = Depends(get_session),
+) -> PersonOut:
+    person = Person(first_name=payload.first_name, last_name=payload.last_name)
+    session.add(person)
+    session.commit()
+    session.refresh(person)
+    return person
+
+@router.delete("/persons/{person_id}", status_code=204)
+def delete_person(
+    person_id: int,
+    session: Session = Depends(get_session),
+) -> None:
+    person = session.get(Person, person_id)
+    if not person:
+        raise HTTPException(status_code=404, detail="Person not found")
+
+    session.delete(person)
+    session.commit()
+# fin du code ajouté

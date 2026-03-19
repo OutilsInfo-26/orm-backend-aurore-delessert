@@ -3,8 +3,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
 from app.db import get_session
-from app.models import Author, Book, Publisher
-from app.schemas import BookWithAuthor, BookWithAuthorObject, BookWithPublisher
+from app.models import Author, Book, Publisher, Person
+from app.schemas import BookWithAuthor, BookWithAuthorObject, BookWithPublisher, BookWithOwner, PersonOut
 
 router = APIRouter(prefix="/orm", tags=["ORM jointure"])
 
@@ -82,6 +82,64 @@ def list_books_with_publisher(
             title=row.title,
             pages=row.pages,
             publisher_name=row.publisher_name,
+        )
+        for row in rows
+    ]
+    
+@router.get("/books-with-owner", response_model=list[BookWithOwner])
+def list_books_with_owner(
+    session: Session = Depends(get_session),
+) -> list[BookWithOwner]:
+    stmt = (
+        select(
+            Book.id,
+            Book.title,
+            Book.pages,
+            Person.id.label("owner_id"),
+            Person.first_name.label("owner_first_name"),
+            Person.last_name.label("owner_last_name"),
+        )
+        .join(Person, Book.owner_id == Person.id, isouter=True)
+        .order_by(Book.id)
+    )
+
+    rows = session.execute(stmt).all()
+
+    return [
+        BookWithOwner(
+            id=row.id,
+            title=row.title,
+            pages=row.pages,
+            owner=PersonOut(
+                id=row.owner_id,
+                first_name=row.owner_first_name,
+                last_name=row.owner_last_name
+            ) if row.owner_id is not None else None
+        )
+        for row in rows
+    ]
+    
+@router.get("/persons-with-books", response_model=list[PersonOut])
+def list_persons_with_books(
+    session: Session = Depends(get_session),
+) -> list[PersonOut]:
+    stmt = (
+        select(
+            Person.id,
+            Person.first_name,
+            Person.last_name,
+        )
+        .join(Book, Person.id == Book.owner_id, isouter=True)
+        .order_by(Person.id)
+    )
+
+    rows = session.execute(stmt).all()
+
+    return [
+        PersonOut(
+            id=row.id,
+            first_name=row.first_name,
+            last_name=row.last_name
         )
         for row in rows
     ]
