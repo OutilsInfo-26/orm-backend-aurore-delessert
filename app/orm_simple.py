@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_session
 from app.models import Author, Book, Person, Publisher, Tag
-from app.schemas import AuthorCreate, AuthorOut, AuthorUpdate, BookCreate, BookOut, PersonCreate, PersonOut, Stats, PersonWithNumberOfBooks
+from app.schemas import AuthorCreate, AuthorOut, AuthorUpdate, BookCreate, BookOut, PersonCreate, PersonOut, Stats, PersonWithNumberOfBooks, BookSummary
 
 router = APIRouter(prefix="/orm", tags=["ORM simple"])
 
@@ -71,6 +71,18 @@ def create_book(
     session.refresh(book)
     return book
 
+@router.delete("/books/{book_id}", status_code=204)
+def delete_book(
+    book_id: int,
+    session: Session = Depends(get_session),
+) -> None:
+    book = session.get(Book, book_id)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    session.delete(book)
+    session.commit()
+
 # Code ajouté
 
 @router.get("/persons", response_model=list[PersonOut])
@@ -101,19 +113,6 @@ def delete_person(
     session.delete(person)
     session.commit()
 
-@router.delete("/books/{book_id}", status_code=204)
-def delete_book(
-    book_id: int,
-    session: Session = Depends(get_session),
-) -> None:
-    book = session.get(Book, book_id)
-    if not book:
-        raise HTTPException(status_code=404, detail="Book not found")
-
-    session.delete(book)
-    session.commit()
-
-from app.schemas import BookSummary
 
 @router.get("/stats", response_model=Stats)
 def get_stats(session: Session = Depends(get_session)) -> Stats:

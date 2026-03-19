@@ -131,7 +131,7 @@ Créez un modèle `Person` représentant le propriétaire d'un livre.
 
 ### Routes — Livres enrichis
 
-#### 5. Livres avec auteur et éditeur
+#### 5. Livres avec auteur et éditeur ✔️
 `GET /orm/books-full`
 
 - Retourner chaque livre avec le nom de l'auteur et le nom de l'éditeur
@@ -145,7 +145,7 @@ Créez un modèle `Person` représentant le propriétaire d'un livre.
 
 ### Routes — Statistiques
 
-#### 7. Statistiques générales
+#### 7. Statistiques générales ✔️ 
 `GET /orm/stats`
 
 Retourner un objet JSON avec :
@@ -155,7 +155,7 @@ Retourner un objet JSON avec :
 - Titre et nombre de pages du livre le plus long
 - Moyenne du nombre de pages de tous les livres
 
-#### 8. Personnes avec le nombre de livres
+#### 8. Personnes avec le nombre de livres ✔️
 `GET /orm/persons-with-book-count`
 
 - Retourner chaque personne avec le nombre de livres qu'elle possède

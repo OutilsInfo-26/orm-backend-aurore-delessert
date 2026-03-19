@@ -155,3 +155,12 @@ class PersonWithNumberOfBooks(BaseModel):
     number_of_books: int
 
     model_config = {"from_attributes": True}
+    
+class BookWithAuthorAndPublisher(BaseModel):
+    id: int
+    title: str
+    pages: int
+    author_name: str
+    publisher_name: str | None
+
+    model_config = {"from_attributes": True}

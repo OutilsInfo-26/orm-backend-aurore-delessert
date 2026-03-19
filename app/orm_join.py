@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.orm import selectinload
 
 from app.db import get_session
 from app.models import Author, Book, Publisher, Person
-from app.schemas import BookSummary, BookWithAuthor, BookWithAuthorObject, BookWithPublisher, BookWithOwner, PersonOut, PersonWithBooks
+from app.schemas import BookSummary, BookWithAuthor, BookWithAuthorObject, BookWithPublisher, BookWithOwner, PersonOut, PersonWithBooks, BookWithAuthorAndPublisher, PersonWithNumberOfBooks
 
 router = APIRouter(prefix="/orm", tags=["ORM jointure"])
 
@@ -128,12 +128,10 @@ def list_persons_with_books(
     Retourne tous les Person avec leurs livres (owned_books) en une seule requête.
     Utilise joinedload pour précharger les livres et éviter le N+1 query problem.
     """
-    # Charge toutes les personnes avec leurs livres en une seule requête
     persons = session.execute(
         select(Person).options(selectinload(Person.owned_books)).order_by(Person.id)
     ).scalars().all()
 
-    # Retourne la liste au format PersonWithBooks
     return [
         PersonWithBooks(
             id=person.id,
@@ -147,3 +145,51 @@ def list_persons_with_books(
         for person in persons
     ]
  
+@router.get("/books-with-author-and-publisher", response_model=list[BookWithAuthorAndPublisher])
+def list_books_with_author_and_publisher(
+    session: Session = Depends(get_session),
+) -> list[BookWithAuthorAndPublisher]:
+    stmt = (
+        select(
+            Book.id,
+            Book.title,
+            Book.pages,
+            Author.name.label("author_name"),
+            Publisher.name.label("publisher_name"),
+        )
+        .join(Author)
+        .join(Publisher, Book.publisher_id == Publisher.id, isouter=True)
+        .order_by(Book.id)
+    )
+
+    rows = session.execute(stmt).all()
+    return [
+        BookWithAuthorAndPublisher(
+            id=row.id,
+            title=row.title,
+            pages=row.pages,
+            author_name=row.author_name,
+            publisher_name=row.publisher_name,
+        )
+        for row in rows
+    ]
+    
+    
+        
+@router.get("/persons-with-book-count", response_model=list[PersonWithNumberOfBooks])
+def get_persons_with_number_of_books(session: Session = Depends(get_session)) -> list[PersonWithNumberOfBooks]:
+    persons = session.execute(
+        select(Person, func.count(Book.id).label("number_of_books"))
+        .outerjoin(Book)
+        .group_by(Person.id)
+    ).scalars(Person).all()
+
+    return [
+        PersonWithNumberOfBooks(
+            id=person.id,
+            first_name=person.first_name,
+            last_name=person.last_name,
+            number_of_books=session.scalar(select(func.count(Book.id)).where(Book.owner_id == person.id))
+        )
+        for person in persons
+    ]
