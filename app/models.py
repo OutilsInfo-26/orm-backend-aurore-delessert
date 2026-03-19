@@ -42,6 +42,7 @@ class Book(Base):
     # code ajouté
     
     owner_id: Mapped[int | None] = mapped_column(ForeignKey("persons.id"))
+    owner: Mapped["Person"] = relationship("Person", back_populates="owned_books")
     
     # fin du code ajouté
 
@@ -79,3 +80,7 @@ class Person(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     first_name: Mapped[str] = mapped_column(String(100))
     last_name: Mapped[str] = mapped_column(String(100))
+    
+    owned_books: Mapped[list["Book"]] = relationship("Book", back_populates="owner")
+    
+# fin du code ajouté

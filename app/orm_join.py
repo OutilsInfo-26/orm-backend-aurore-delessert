@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import selectinload
 
 from app.db import get_session
 from app.models import Author, Book, Publisher, Person
-from app.schemas import BookWithAuthor, BookWithAuthorObject, BookWithPublisher, BookWithOwner, PersonOut
+from app.schemas import BookSummary, BookWithAuthor, BookWithAuthorObject, BookWithPublisher, BookWithOwner, PersonOut, PersonWithBooks
 
 router = APIRouter(prefix="/orm", tags=["ORM jointure"])
 
@@ -119,27 +120,30 @@ def list_books_with_owner(
         for row in rows
     ]
     
-@router.get("/persons-with-books", response_model=list[PersonOut])
+@router.get("/persons-with-books", response_model=list[PersonWithBooks])
 def list_persons_with_books(
     session: Session = Depends(get_session),
-) -> list[PersonOut]:
-    stmt = (
-        select(
-            Person.id,
-            Person.first_name,
-            Person.last_name,
-        )
-        .join(Book, Person.id == Book.owner_id, isouter=True)
-        .order_by(Person.id)
-    )
+) -> list[PersonWithBooks]:
+    """
+    Retourne tous les Person avec leurs livres (owned_books) en une seule requête.
+    Utilise joinedload pour précharger les livres et éviter le N+1 query problem.
+    """
+    # Charge toutes les personnes avec leurs livres en une seule requête
+    persons = session.execute(
+        select(Person).options(selectinload(Person.owned_books)).order_by(Person.id)
+    ).scalars().all()
 
-    rows = session.execute(stmt).all()
-
+    # Retourne la liste au format PersonWithBooks
     return [
-        PersonOut(
-            id=row.id,
-            first_name=row.first_name,
-            last_name=row.last_name
+        PersonWithBooks(
+            id=person.id,
+            first_name=person.first_name,
+            last_name=person.last_name,
+            owned_books=[
+                BookSummary(id=book.id, title=book.title)
+                for book in person.owned_books
+            ]
         )
-        for row in rows
+        for person in persons
     ]
+ 

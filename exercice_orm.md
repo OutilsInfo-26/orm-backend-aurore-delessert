@@ -100,7 +100,7 @@ Les tâches suivantes sont à implémenter dans de nouveaux fichiers ou dans les
 
 ### Modèle
 
-#### 1. Table `Person`
+#### 1. Table `Person` ✔️ 
 Créez un modèle `Person` représentant le propriétaire d'un livre.
 
 - Une personne peut posséder plusieurs livres
@@ -111,18 +111,18 @@ Créez un modèle `Person` représentant le propriétaire d'un livre.
 
 ### Routes — Persons
 
-#### 2. Créer une personne
+#### 2. Créer une personne ✔️ 
 `POST /orm/persons`
 
 - Valider les données avec un schema Pydantic
 - Retourner la personne créée
 
-#### 3. Lister les personnes
+#### 3. Lister les personnes ✔️ 
 `GET /orm/persons`
 
 - Retourner la liste de toutes les personnes
 
-#### 4. Personnes avec leurs livres (nom seulement)
+#### 4. Personnes avec leurs livres (nom seulement) ✔️ 
 `GET /orm/persons-with-books`
 
 - Retourner chaque personne avec la liste des titres de ses livres
@@ -137,7 +137,7 @@ Créez un modèle `Person` représentant le propriétaire d'un livre.
 - Retourner chaque livre avec le nom de l'auteur et le nom de l'éditeur
 - Rappel : `publisher_id` existe dans `Book` mais il n'y a pas de `relationship` — la jointure doit être faite manuellement
 
-#### 6. Supprimer un livre
+#### 6. Supprimer un livre ✔️ 
 `DELETE /orm/books/{book_id}`
 
 - Retourner `204 No Content` si supprimé

@@ -100,4 +100,16 @@ def delete_person(
 
     session.delete(person)
     session.commit()
-# fin du code ajouté
+
+@router.delete("/books/{book_id}", status_code=204)
+def delete_book(
+    book_id: int,
+    session: Session = Depends(get_session),
+) -> None:
+    book = session.get(Book, book_id)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    session.delete(book)
+    session.commit()
+

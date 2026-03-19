@@ -127,5 +127,13 @@ class BookWithOwner(BaseModel):
     owner: PersonOut | None
 
     model_config = {"from_attributes": True}
+    
+class PersonWithBooks(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+    owned_books: list[BookSummary]
+
+    model_config = {"from_attributes": True}
 
 # fin du code ajouté
